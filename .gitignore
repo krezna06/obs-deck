@@ -1,6 +1,9 @@
 # Verification report written by tools/ws_selftest.py
 tools/.ws-selftest-report.json
 
+# Copy of the live site saved by tools/compare-live.mjs
+.live-remote.html
+
 # Python bytecode from the selftest tool
 __pycache__/
 *.pyc

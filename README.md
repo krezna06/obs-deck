@@ -189,6 +189,8 @@ Be aware of what you are turning on:
 | `docker-compose.yml` | Caddy container, this repository mounted read-only |
 | `start-deck.ps1` / `stop-deck.ps1` | Windows launchers; detect Docker, LAN IP, OBS port |
 | `tools/verify.ps1` | Runs the whole verification suite |
+| `tools/check-live.mjs` | Hashes each public deployment and says whether it can reach OBS |
+| `tools/compare-live.mjs` | Compares the live site against the repository revisions, byte for byte |
 | `tools/test-deck.mjs` | Drives the deck's real script through a full OBS session |
 | `tools/mock-obs.mjs` + `tools/raw-ws.mjs` | A fake obs-websocket v5 server, zero dependencies |
 | `tools/ws_selftest.py` | Independent stdlib-only RFC6455 client |
