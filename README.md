@@ -8,6 +8,19 @@ This is a rework of the deck that runs at `remote.krezna.web.id`, which lives be
 HTTPS. That works, but it fights the browser the whole way. This edition removes the
 fight.
 
+Two public deployments exist and both are Git-connected to this repository, so they
+redeploy on every push to `main`:
+
+| URL | Host | Works as a controller? |
+|---|---|---|
+| https://remote.krezna.web.id | Vercel, proxied by Cloudflare | no — HTTPS blocks `ws://` |
+| https://obs-deck.vercel.app | Vercel | no — HTTPS blocks `ws://` |
+| https://krezna06.github.io/obs-deck/ | GitHub Pages | no — HTTPS blocks `ws://` |
+
+They render the interface correctly and **cannot connect to OBS**, for the reason
+above. Use the LAN deployment for anything real. `node tools/check-live.mjs` re-checks
+all of them and prints the verdict.
+
 ---
 
 ## Why not just use the HTTPS version?
