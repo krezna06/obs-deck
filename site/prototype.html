@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OBS Web Deck</title>
+<style>
+:root{
+ --bg:#0b0d10;--panel:#15181d;--panel2:#1c2027;--border:#303640;
+ --text:#f4f6f8;--muted:#929aa6;--accent:#765cff;--green:#35d07f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 20% 0,#252a34,#090b0e 58%);
+font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text);min-height:100vh}
+.app{max-width:1200px;margin:auto;padding:18px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:44px;height:44px;border-radius:13px;background:var(--accent);display:grid;place-items:center;font-weight:900}
+h1{font-size:20px;margin:0}.sub,.small{font-size:11px;color:var(--muted)}
+.status{display:flex;gap:8px;align-items:center;border:1px solid var(--border);
+border-radius:999px;padding:8px 12px;background:#111318;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#777}.connected .dot{background:var(--green)}
+.panel{background:rgba(21,24,29,.96);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:16px}
+.controls{display:grid;grid-template-columns:1.2fr 1fr .6fr auto;gap:10px}
+label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);
+background:#0f1115;color:var(--text)}
+button{font:inherit;color:var(--text);cursor:pointer;border:0}
+.connect,.primary{background:var(--accent);padding:10px 16px;border-radius:10px;font-weight:800}
+.secondary{background:#343943!important}
+.msg{margin-top:9px;font-size:12px;color:var(--muted)}
+
+.previewBox{border:1px solid var(--border);border-radius:13px;overflow:hidden;background:#090b0e}
+.previewHead{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#171a20;border-bottom:1px solid var(--border)}
+.previewTitle{font-size:12px;font-weight:900}
+.tag{font-size:10px;background:#282d36;padding:4px 7px;border-radius:999px;color:#bfc5ce}
+.preview{aspect-ratio:16/9;display:grid;place-items:center;background:#080a0d}
+.preview img{width:100%;height:100%;object-fit:cover;display:block}
+.placeholder{font-size:12px;color:#626b77}
+.previewFoot{padding:9px 12px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.title{font-size:13px;font-weight:900}
+
+.transitionBar{display:grid;grid-template-columns:1fr 1fr 130px auto;gap:10px;align-items:end}
+.transitionButtons{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}
+.transBtn{padding:8px 11px;border-radius:9px;background:#242932;border:1px solid var(--border);font-size:11px}
+.transBtn.active{border-color:var(--accent);background:#27203e;box-shadow:0 0 0 1px var(--accent) inset}
+.takeBtn{height:40px;border-radius:10px;background:#ef5961;font-weight:900;padding:0 20px}
+.duration{max-width:130px}
+
+.deck{display:grid;grid-template-columns:repeat(5,minmax(100px,1fr));gap:11px}
+.deckBtn{min-height:112px;border:1px solid var(--border);border-radius:15px;
+background:linear-gradient(145deg,#252a33,#171a20);display:flex;flex-direction:column;
+justify-content:space-between;align-items:center;padding:12px 9px;text-align:center;
+box-shadow:0 5px 16px #0005;position:relative;overflow:hidden}
+.deckBtn:hover{border-color:#606876;transform:translateY(-1px)}
+.deckBtn:active{transform:scale(.97)}
+.deckBtn .icon{font-size:28px;line-height:1}
+.deckBtn .name{font-weight:800;font-size:12px}
+.deckBtn .hint{font-size:9px;color:#a8afba}
+.deckBtn .edit{position:absolute;right:7px;top:6px;opacity:.4;font-size:10px}
+.deckBtn:hover .edit{opacity:1}
+.deckBtn.active{box-shadow:0 0 0 2px var(--btn-color,#765cff) inset}
+.sceneButton{--btn-color:#4da3ff}
+
+.scene-list{display:flex;flex-wrap:wrap;gap:7px}
+.scene{padding:7px 10px;border-radius:9px;background:#111318;border:1px solid var(--border);
+font-size:11px;cursor:pointer}
+.scene.active{border-color:#4da3ff;background:#182a3c}
+
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+.modal.open{display:flex}
+.modalCard{width:min(480px,100%);background:#171a20;border:1px solid var(--border);border-radius:16px;padding:16px}
+.modalGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.iconGrid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.iconChoice{width:38px;height:38px;border-radius:8px;background:#252a32;border:1px solid var(--border);font-size:19px}
+.iconChoice.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.btn{padding:9px 13px;border-radius:9px;background:#30353f}
+
+@media(max-width:800px){
+ .controls{grid-template-columns:1fr 1fr}.controls .connect{grid-column:span 2}
+ .transitionBar{grid-template-columns:1fr 1fr}.takeBtn{grid-column:span 2}
+ .deck{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:460px){
+ .deck{grid-template-columns:repeat(2,1fr)}.modalGrid{grid-template-columns:1fr}
+ .transitionBar{grid-template-columns:1fr}.takeBtn{grid-column:auto}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="top">
+ <div class="brand">
+  <div class="logo">OBS</div>
+  <div>
+   <h1>OBS Web Deck</h1>
+   <div class="sub">Stream Deck-style OBS WebSocket controller</div>
+  </div>
+ </div>
+ <div id="status" class="status"><span class="dot"></span><span id="statusText">Disconnected</span></div>
+</div>
+
+<section class="panel">
+ <div class="controls">
+  <div>
+   <label>OBS WebSocket URL</label>
+   <input id="url" value="ws://127.0.0.1:4455">
+  </div>
+  <div>
+   <label>Password</label>
+   <input id="password" type="password" placeholder="OBS WebSocket password">
+  </div>
+  <div>
+   <label>Columns</label>
+   <select id="cols"><option>5</option><option>4</option><option>3</option><option>2</option></select>
+  </div>
+  <button id="connect" class="connect">Connect</button>
+ </div>
+ <div id="urlHint" class="small" style="margin-top:8px;line-height:1.5"></div>
+ <div id="msg" class="msg">OBS → Tools → WebSocket Server Settings → Enable WebSocket Server.</div>
+</section>
+
+<section class="panel">
+ <div class="row">
+  <div>
+   <div class="title">Scene Preview</div>
+   <div class="small">Preview the selected scene before taking it live.</div>
+  </div>
+  <button id="refreshPreview" class="btn">↻ Refresh</button>
+ </div>
+ <div class="previewBox">
+  <div class="previewHead">
+   <span class="previewTitle">PREVIEW</span>
+   <span id="previewTag" class="tag">No scene selected</span>
+  </div>
+  <div id="scenePreview" class="preview"><div class="placeholder">Select a scene</div></div>
+  <div id="sceneName" class="previewFoot">Scene: —</div>
+ </div>
+</section>
+
+<section class="panel">
+ <div class="row">
+  <div>
+   <div class="title">Transition</div>
+   <div class="small">Select a transition, then press TAKE.</div>
+  </div>
+  <div class="small" id="transitionStatus">—</div>
+ </div>
+
+ <div class="transitionBar">
+  <div>
+   <label>Transition</label>
+   <div id="transitionButtons" class="transitionButtons"></div>
+  </div>
+  <div>
+   <label>Duration</label>
+   <input id="duration" class="duration" type="number" min="0" max="10000" step="50" value="300">
+  </div>
+  <div>
+   <label>Mode</label>
+   <select id="transitionMode">
+    <option value="cut">Cut</option>
+    <option value="transition">Transition</option>
+   </select>
+  </div>
+  <button id="take" class="takeBtn">TAKE</button>
+ </div>
+</section>
+
+<section class="panel">
+ <div class="row">
+  <div>
+   <div class="title">Deck</div>
+   <div class="small">Click = action · ✎ = customize icon/color/name</div>
+  </div>
+  <div class="small" id="sceneCount">0 scenes</div>
+ </div>
+ <div id="deck" class="deck"></div>
+</section>
+
+<section class="panel">
+ <div class="row">
+  <div class="title">Scenes</div>
+  <div class="small">Click a scene to preview</div>
+ </div>
+ <div id="scenes" class="scene-list">
+  <span class="small">Connect to OBS to load scenes.</span>
+ </div>
+</section>
+
+</div>
+
+<div id="modal" class="modal">
+ <div class="modalCard">
+  <div class="title" style="margin-bottom:12px">Customize Button</div>
+  <div class="modalGrid">
+   <div><label>Button label</label><input id="editName"></div>
+   <div><label>Color</label><input id="editColor" type="color" value="#765cff" style="height:40px"></div>
+  </div>
+  <div style="margin-top:12px">
+   <label>Icon</label>
+   <div id="iconGrid" class="iconGrid"></div>
+  </div>
+  <div class="modalActions">
+   <button id="cancelEdit" class="btn">Cancel</button>
+   <button id="saveEdit" class="primary">Save</button>
+  </div>
+ </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+
+let ws=null;
+let pending=new Map();
+let scenes=[];
+let currentScene="";
+let previewScene="";
+let connected=false;
+let editingIndex=null;
+let selectedTransition="";
+
+// This page's own scheme. Vercel always serves https, and https pages are
+// not allowed to open a plain ws:// connection to a device other than the
+// one the browser itself is running on (mixed-content blocking).
+const isHttps=location.protocol==="https:";
+
+function isLoopbackHost(host){
+ return host==="localhost"||host==="127.0.0.1"||host==="[::1]"||host==="::1";
+}
+
+function updateUrlHint(){
+ const url=$("url").value.trim();
+ let host="";
+
+ try{host=new URL(url).hostname}catch(e){}
+
+ const hint=$("urlHint");
+
+ if(isHttps&&url.startsWith("ws://")&&host&&!isLoopbackHost(host)){
+  hint.innerHTML="This page is served over HTTPS, so the browser blocks a plain <b>ws://</b> link to another device. Use a <b>wss://</b> address instead (tunnel OBS with Cloudflare Tunnel or ngrok), or host this deck over plain HTTP on the same network as OBS.";
+  hint.style.color="#e2ad4c";
+ }else{
+  hint.textContent="Connecting from a phone or another device? Use the OBS PC's own IP address, not 127.0.0.1 (e.g. ws://192.168.1.23:4455 on the same Wi-Fi, or wss://... if this page is on HTTPS).";
+  hint.style.color="";
+ }
+}
+
+const defaultButtons=[
+ {icon:"🎬",name:"START STREAM",action:"startStream",hint:"Go live",color:"#ef5961"},
+ {icon:"⏹",name:"STOP STREAM",action:"stopStream",hint:"End live",color:"#ef5961"},
+ {icon:"●",name:"START REC",action:"startRecord",hint:"Record",color:"#d46a92"},
+ {icon:"■",name:"STOP REC",action:"stopRecord",hint:"Stop recording",color:"#d46a92"},
+ {icon:"⏸",name:"PAUSE REC",action:"pauseRecord",hint:"Toggle pause",color:"#e2ad4c"},
+ {icon:"🔄",name:"REFRESH",action:"refresh",hint:"Reload OBS",color:"#765cff"},
+ {icon:"🎙",name:"MUTE MIC",action:"muteMic",hint:"Customize source",color:"#4da3ff"},
+ {icon:"🖥",name:"STUDIO",action:"studio",hint:"Toggle Studio",color:"#765cff"}
+];
+
+let custom=JSON.parse(localStorage.getItem("obsDeckButtons")||"null")||defaultButtons;
+
+const icons=["🎬","⏹","▶","●","■","⏸","⏺","🔄","🎙","🔇","🔊","🖥","📺","🎞️","📷","💡","⚡","⭐","❤️","🚨","🟢","🔴","🟡","🔵","⚙️","🎧","🎤","📝","🏠","🎥"];
+
+function uuid(){
+ return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random();
+}
+
+function setStatus(ok,text){
+ connected=ok;
+ $("status").classList.toggle("connected",ok);
+ $("statusText").textContent=text;
+}
+
+function say(t){$("msg").textContent=t}
+
+function escapeHtml(s){
+ return String(s).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
+
+function send(type,data={}){
+ return new Promise((resolve,reject)=>{
+  if(!ws||ws.readyState!==WebSocket.OPEN)
+   return reject(new Error("Not connected"));
+
+  const requestId=uuid();
+  pending.set(requestId,{resolve,reject});
+
+  ws.send(JSON.stringify({
+   op:6,
+   d:{
+    requestType:type,
+    requestId,
+    requestData:data
+   }
+  }));
+
+  setTimeout(()=>{
+   if(pending.has(requestId)){
+    pending.delete(requestId);
+    reject(new Error("Request timeout"));
+   }
+  },8000);
+ });
+}
+
+async function sha256(t){
+ return [...new Uint8Array(
+  await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t))
+ )].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+
+async function auth(password,salt,challenge){
+ const secret=await sha256(password+salt);
+ return sha256(secret+challenge);
+}
+
+function renderDeck(){
+ const deck=$("deck");
+ deck.innerHTML="";
+
+ custom.forEach((item,i)=>{
+  const b=document.createElement("button");
+  b.className="deckBtn";
+  b.style.setProperty("--btn-color",item.color||"#765cff");
+
+  b.innerHTML=`
+   <span class="edit">✎</span>
+   <span class="icon">${item.icon}</span>
+   <span class="name">${escapeHtml(item.name)}</span>
+   <span class="hint">${escapeHtml(item.hint||"")}</span>
+  `;
+
+  b.addEventListener("click",e=>{
+   if(e.target.classList.contains("edit")){
+    openEdit(i);
+   }else{
+    runAction(item.action,b);
+   }
+  });
+
+  deck.appendChild(b);
+ });
+
+ scenes.forEach((s,i)=>{
+  const b=document.createElement("button");
+  b.className="deckBtn sceneButton";
+  b.dataset.scene=s;
+  b.style.setProperty("--btn-color","#4da3ff");
+
+  b.innerHTML=`
+   <span class="edit">SCENE</span>
+   <span class="icon">🎞️</span>
+   <span class="name">${escapeHtml(s)}</span>
+   <span class="hint">Preview / Take</span>
+  `;
+
+  b.addEventListener("click",async()=>{
+   previewScene=s;
+   await updateScenePreview();
+
+   if(document.getElementById("transitionMode").value==="cut"){
+    await runScene(s,b);
+   }else{
+    say("Scene previewed: "+s+". Press TAKE to go live.");
+    updateDeckState();
+   }
+  });
+
+  deck.appendChild(b);
+ });
+
+ updateDeckState();
+}
+
+function updateDeckState(){
+ document.querySelectorAll(".sceneButton").forEach(b=>{
+  b.classList.toggle("active",b.dataset.scene===currentScene);
+ });
+}
+
+async function runScene(scene,b){
+ if(!connected){
+  say("Connect to OBS first.");
+  return;
+ }
+
+ try{
+  await send("SetCurrentProgramScene",{sceneName:scene});
+  currentScene=scene;
+  updateDeckState();
+  await loadScenes();
+  await updateScenePreview();
+  say("Program switched to "+scene);
+ }catch(e){
+  say("OBS error: "+e.message);
+ }
+}
+
+async function runAction(action,b){
+ if(!connected){
+  say("Connect to OBS first.");
+  return;
+ }
+
+ try{
+  if(action==="startStream"){
+   await send("StartStream");
+   say("Stream started");
+  }
+
+  else if(action==="stopStream"){
+   await send("StopStream");
+   say("Stream stopped");
+  }
+
+  else if(action==="startRecord"){
+   await send("StartRecord");
+   say("Recording started");
+  }
+
+  else if(action==="stopRecord"){
+   await send("StopRecord");
+   say("Recording stopped");
+  }
+
+  else if(action==="pauseRecord"){
+   const r=await send("GetRecordStatus");
+   await send(r.responseData.outputPaused?"ResumeRecord":"PauseRecord");
+   say("Recording pause state toggled");
+  }
+
+  else if(action==="refresh"){
+   await loadScenes();
+   await refreshPreview();
+   say("OBS state refreshed");
+  }
+
+  else if(action==="studio"){
+   const r=await send("GetStudioModeEnabled");
+   await send("SetStudioModeEnabled",{
+    studioModeEnabled:!r.responseData.studioModeEnabled
+   });
+   say("Studio Mode toggled");
+  }
+
+  else if(action==="muteMic"){
+   say("Customize this button with an OBS input source.");
+  }
+
+ }catch(e){
+  say("OBS error: "+e.message);
+ }
+}
+
+async function screenshot(sourceName){
+ try{
+  const r=await send("GetSourceScreenshot",{
+   sourceName,
+   imageFormat:"jpeg",
+   imageWidth:960,
+   imageHeight:540
+  });
+  return r.responseData.imageData;
+ }catch(e){
+  return null;
+ }
+}
+
+function showImage(container,data){
+ container.innerHTML="";
+
+ if(data){
+  const img=document.createElement("img");
+  img.src=data;
+  container.appendChild(img);
+ }else{
+  container.innerHTML='<div class="placeholder">Preview unavailable</div>';
+ }
+}
+
+async function refreshPreview(){
+ if(!connected){
+  return;
+ }
+
+ if(!previewScene){
+  previewScene=currentScene;
+ }
+
+ await updateScenePreview();
+}
+
+async function updateScenePreview(){
+ $("sceneName").textContent="Scene: "+(previewScene||"—");
+ $("previewTag").textContent=previewScene||"No scene selected";
+
+ if(!connected||!previewScene){
+  $("scenePreview").innerHTML='<div class="placeholder">Select a scene</div>';
+  return;
+ }
+
+ const img=await screenshot(previewScene);
+ showImage($("scenePreview"),img);
+}
+
+async function loadScenes(){
+ const r=await send("GetSceneList");
+
+ scenes=(r.responseData.scenes||[]).map(x=>x.sceneName);
+ currentScene=r.responseData.currentProgramSceneName||"";
+
+ $("sceneCount").textContent=scenes.length+" scenes";
+
+ $("scenes").innerHTML=scenes.map(s=>`
+  <span class="scene ${s===currentScene?"active":""}"
+        data-scene="${escapeHtml(s)}">
+   ${escapeHtml(s)}${s===currentScene?" • LIVE":""}
+  </span>
+ `).join("");
+
+ $("scenes").querySelectorAll(".scene").forEach(el=>{
+  el.addEventListener("click",async()=>{
+   previewScene=el.dataset.scene;
+   await updateScenePreview();
+   say("Preview: "+previewScene);
+  });
+ });
+
+ renderDeck();
+}
+
+async function loadTransitions(){
+ try{
+  const r=await send("GetTransitionList");
+  const list=r.responseData.transitions||[];
+
+  const box=$("transitionButtons");
+  box.innerHTML="";
+
+  list.forEach(t=>{
+   const b=document.createElement("button");
+   b.className="transBtn";
+   b.textContent=t.transitionName;
+
+   b.addEventListener("click",async()=>{
+    selectedTransition=t.transitionName;
+
+    document.querySelectorAll(".transBtn").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+
+    await send("SetCurrentSceneTransition",{
+     transitionName:selectedTransition
+    });
+
+    $("transitionStatus").textContent="Selected: "+selectedTransition;
+   });
+
+   box.appendChild(b);
+  });
+
+  if(list.length){
+   selectedTransition=list[0].transitionName;
+   box.firstElementChild.classList.add("active");
+   $("transitionStatus").textContent="Selected: "+selectedTransition;
+  }
+ }catch(e){
+  $("transitionButtons").innerHTML='<span class="small">Transition list unavailable.</span>';
+ }
+}
+
+async function takeScene(){
+ if(!connected){
+  say("Connect to OBS first.");
+  return;
+ }
+
+ if(!previewScene){
+  say("Select a scene first.");
+  return;
+ }
+
+ try{
+  const mode=$("transitionMode").value;
+
+  if(mode==="cut"){
+   await send("SetCurrentProgramScene",{sceneName:previewScene});
+  }else{
+   if(selectedTransition){
+    await send("SetCurrentSceneTransition",{
+     transitionName:selectedTransition
+    });
+   }
+
+   const duration=parseInt($("duration").value||"300",10);
+
+   if(duration>=0){
+    try{
+     await send("SetCurrentSceneTransitionDuration",{transitionDuration:duration});
+    }catch(e){}
+   }
+
+   await send("TriggerStudioModeTransition");
+  }
+
+  currentScene=previewScene;
+  updateDeckState();
+  await loadScenes();
+  say("TAKE: "+currentScene);
+
+ }catch(e){
+  say("Transition error: "+e.message);
+ }
+}
+
+function openEdit(i){
+ editingIndex=i;
+ const x=custom[i];
+
+ $("editName").value=x.name;
+ $("editColor").value=x.color||"#765cff";
+
+ $("iconGrid").innerHTML=icons.map(ic=>`
+  <button type="button"
+          class="iconChoice ${ic===x.icon?"selected":""}"
+          data-icon="${ic}">
+   ${ic}
+  </button>
+ `).join("");
+
+ $("iconGrid").querySelectorAll(".iconChoice").forEach(b=>{
+  b.addEventListener("click",()=>{
+   $("iconGrid").querySelectorAll(".iconChoice")
+    .forEach(x=>x.classList.remove("selected"));
+   b.classList.add("selected");
+  });
+ });
+
+ $("modal").classList.add("open");
+}
+
+$("saveEdit").addEventListener("click",()=>{
+ if(editingIndex===null)return;
+
+ const selected=$("iconGrid").querySelector(".selected");
+
+ custom[editingIndex].name=$("editName").value.trim()||"BUTTON";
+ custom[editingIndex].color=$("editColor").value;
+ custom[editingIndex].icon=selected?selected.dataset.icon:"🎬";
+
+ localStorage.setItem("obsDeckButtons",JSON.stringify(custom));
+
+ $("modal").classList.remove("open");
+ renderDeck();
+});
+
+$("cancelEdit").addEventListener("click",()=>{
+ $("modal").classList.remove("open");
+});
+
+$("modal").addEventListener("click",e=>{
+ if(e.target===$("modal")){
+  $("modal").classList.remove("open");
+ }
+});
+
+$("connect").addEventListener("click",async()=>{
+ if(connected){
+  closeWS();
+  $("connect").textContent="Connect";
+  $("connect").classList.remove("secondary");
+  return;
+ }
+
+ const url=$("url").value.trim();
+ const password=$("password").value;
+
+ if(!url){
+  say("Enter your OBS WebSocket address first.");
+  return;
+ }
+
+ let target;
+ try{
+  target=new URL(url);
+ }catch(e){
+  say("That's not a valid address. Use the form ws://host:port or wss://host:port.");
+  return;
+ }
+
+ // Mixed content: an https page can never open a plain ws:// connection to
+ // another device. Catch this up front instead of waiting on a vague
+ // browser failure.
+ if(isHttps&&url.startsWith("ws://")&&!isLoopbackHost(target.hostname)){
+  say("Blocked by the browser: this page is served over HTTPS, so it can't open a plain ws:// connection to another device. Use a wss:// address instead, or load this deck over plain HTTP on the same network as OBS (see the note above).");
+  return;
+ }
+
+ say("Connecting…");
+ $("connect").disabled=true;
+
+ let settled=false;
+ const port=target.port||"4455";
+
+ // A wrong IP, closed port, or firewall drop usually doesn't fire an error
+ // at all — it just hangs. Give it a bounded window, then say so.
+ const connectTimeout=setTimeout(()=>{
+  if(settled)return;
+  settled=true;
+  say("No response from "+target.hostname+":"+port+". Check the address/port are correct, the OBS WebSocket server is enabled and running, and that a firewall isn't blocking that port.");
+  closeWS();
+  $("connect").disabled=false;
+ },7000);
+
+ try{
+  ws=new WebSocket(url);
+
+  ws.onmessage=async ev=>{
+   settled=true;
+   clearTimeout(connectTimeout);
+
+   const m=JSON.parse(ev.data);
+
+   if(m.op===0){
+    const identify={rpcVersion:1};
+
+    if(m.d.authentication){
+     identify.authentication=await auth(
+      password,
+      m.d.authentication.salt,
+      m.d.authentication.challenge
+     );
+    }
+
+    ws.send(JSON.stringify({op:1,d:identify}));
+   }
+
+   else if(m.op===2){
+    setStatus(true,"Connected");
+    $("connect").textContent="Disconnect";
+    $("connect").classList.add("secondary");
+    $("connect").disabled=false;
+
+    say("Connected to OBS.");
+
+    await loadScenes();
+    await loadTransitions();
+    await refreshPreview();
+   }
+
+   else if(m.op===7){
+    const p=pending.get(m.d.requestId);
+
+    if(!p)return;
+
+    pending.delete(m.d.requestId);
+
+    if(m.d.requestStatus.result){
+     p.resolve(m.d);
+    }else{
+     p.reject(new Error(
+      m.d.requestStatus.comment||"OBS request failed"
+     ));
+    }
+   }
+
+   else if(m.op===5){
+    if(m.d.eventType==="CurrentProgramSceneChanged"){
+     currentScene=m.d.eventData.sceneName;
+     updateDeckState();
+     loadScenes();
+    }
+   }
+  };
+
+  ws.onerror=()=>{
+   // Browsers withhold specifics on WebSocket errors for security reasons;
+   // the close event below carries the real code/reason, so react there.
+  };
+
+  ws.onclose=(ev)=>{
+   clearTimeout(connectTimeout);
+
+   if(!settled){
+    settled=true;
+
+    if(ev.reason){
+     say("OBS closed the connection: "+ev.reason+" (code "+ev.code+")");
+    }else if(ev.code===4009){
+     say("OBS rejected the password. Check it matches Tools → WebSocket Server Settings.");
+    }else{
+     say("WebSocket failed before connecting. Check the OBS PC's address and port, that the WebSocket server is enabled, and that a firewall isn't blocking port "+port+".");
+    }
+   }
+
+   if(connected)closeWS();
+   $("connect").textContent="Connect";
+   $("connect").classList.remove("secondary");
+   $("connect").disabled=false;
+  };
+
+ }catch(e){
+  clearTimeout(connectTimeout);
+  say(e.message);
+  closeWS();
+  $("connect").disabled=false;
+ }
+});
+
+function closeWS(){
+ if(ws){
+  try{ws.close()}catch(e){}
+  ws=null;
+ }
+
+ pending.forEach(x=>x.reject(new Error("Disconnected")));
+ pending.clear();
+
+ setStatus(false,"Disconnected");
+}
+
+$("take").addEventListener("click",takeScene);
+
+$("refreshPreview").addEventListener("click",refreshPreview);
+
+$("transitionMode").addEventListener("change",()=>{
+ const mode=$("transitionMode").value;
+
+ if(mode==="cut"){
+  $("take").textContent="CUT";
+ }else{
+  $("take").textContent="TAKE";
+ }
+});
+
+$("cols").addEventListener("change",()=>{
+ $("deck").style.gridTemplateColumns=
+ `repeat(${$("cols").value},minmax(100px,1fr))`;
+});
+
+$("deck").style.gridTemplateColumns="repeat(5,minmax(100px,1fr))";
+
+// Served over HTTPS (e.g. this page deployed on Vercel): the plain
+// ws://127.0.0.1:4455 default will never reach a phone-to-PC connection,
+// so swap in a placeholder that points at the real fix instead.
+if(isHttps&&$("url").value==="ws://127.0.0.1:4455"){
+ $("url").value="";
+ $("url").placeholder="wss://your-tunnel-address:port";
+}
+
+$("url").addEventListener("input",updateUrlHint);
+updateUrlHint();
+
+renderDeck();
+</script>
+</body>
+</html>

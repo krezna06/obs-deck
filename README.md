@@ -170,6 +170,7 @@ Be aware of what you are turning on:
 | Path | Purpose |
 |---|---|
 | `site/index.html` | The whole deck — UI, styles and logic in one file |
+| `site/prototype.html` | The original `obs-deck` revision, preserved unmodified for reference; not served |
 | `Caddyfile` | Static host on port 8080, LAN-wide, no directory listing |
 | `docker-compose.yml` | Caddy container, `./site` mounted read-only |
 | `start-deck.ps1` / `stop-deck.ps1` | Windows launchers; detect Docker, LAN IP, OBS port |
@@ -181,20 +182,26 @@ Be aware of what you are turning on:
 
 ---
 
-## Attribution and license
+## Provenance and license
 
 MIT licensed — see [`LICENSE`](LICENSE).
 
-This deck is a LAN-focused rework of the OBS Web Deck controller concept and
-follows the same obs-websocket approach as
+This deck is a rework of the single-file OBS Web Deck originally published in
+**[krezna06/obs-deck](https://github.com/krezna06/obs-deck)** (the revision served at
+`remote.krezna.web.id`). That original is preserved here byte-for-byte as
+[`site/prototype.html`](site/prototype.html) so the lineage is inspectable — it is
+**not** served, and `index.html` is the maintained version.
+
+The hex-versus-base64 bug described above is present in that original, which is what
+this rework fixes.
+
+OBS Remote and the tablet interface this family of tools grew out of come from
 **[t2t2/obs-tablet-remote](https://github.com/t2t2/obs-tablet-remote)**
-(MIT, © 2015 t2t2), the OBS Remote UI that the Stream Deck-style layer in
-`krezna06/remote-obs` builds on. That upstream copyright notice is retained in
+(MIT, © 2015 t2t2). That upstream copyright notice is retained in
 [`LICENSE`](LICENSE).
 
-It is a separate, self-contained single-file implementation. It is not a
-derivative of the Vue application in `krezna06/remote-obs`, which lives on
-unchanged on that repository's `master`, `pages` and `pages1` branches.
+The Vue application in `krezna06/remote-obs` is a separate project and is untouched by
+this repository.
 
 ---
 
