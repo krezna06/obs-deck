@@ -179,14 +179,33 @@ Be aware of what you are turning on:
 | `tools/ws_selftest.py` | Independent stdlib-only RFC6455 client |
 | `tools/dom-shim.mjs` | Small DOM used to run the deck under Node |
 
-### Features kept from the original
+---
+
+## Attribution and license
+
+MIT licensed — see [`LICENSE`](LICENSE).
+
+This deck is a LAN-focused rework of the OBS Web Deck controller concept and
+follows the same obs-websocket approach as
+**[t2t2/obs-tablet-remote](https://github.com/t2t2/obs-tablet-remote)**
+(MIT, © 2015 t2t2), the OBS Remote UI that the Stream Deck-style layer in
+`krezna06/remote-obs` builds on. That upstream copyright notice is retained in
+[`LICENSE`](LICENSE).
+
+It is a separate, self-contained single-file implementation. It is not a
+derivative of the Vue application in `krezna06/remote-obs`, which lives on
+unchanged on that repository's `master`, `pages` and `pages1` branches.
+
+---
+
+## Features kept from the original
 
 Scene preview via `GetSourceScreenshot`, studio-mode `TAKE` with transition and
 duration, stream/record/pause/refresh/studio deck buttons with per-button icon, colour
 and label customisation (saved in `localStorage`), a scene list, and a selectable deck
 column count.
 
-### Added
+## Added
 
 - Auto-detects the OBS address from the host that served the page.
 - **🔍 Find OBS on this network** — sweeps the subnet and fills in the address, with
