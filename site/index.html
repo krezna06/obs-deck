@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>OBS Web Deck</title>
+<style>
+:root{
+ --bg:#0b0d10;--panel:#15181d;--panel2:#1c2027;--border:#303640;
+ --text:#f4f6f8;--muted:#929aa6;--accent:#765cff;--green:#35d07f;--amber:#e2ad4c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 20% 0,#252a34,#090b0e 58%);
+font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--text);min-height:100vh;
+-webkit-text-size-adjust:100%}
+.app{max-width:1200px;margin:auto;padding:18px;padding-bottom:env(safe-area-inset-bottom)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:44px;height:44px;border-radius:13px;background:var(--accent);display:grid;place-items:center;font-weight:900}
+h1{font-size:20px;margin:0}.sub,.small{font-size:11px;color:var(--muted)}
+.status{display:flex;gap:8px;align-items:center;border:1px solid var(--border);
+border-radius:999px;padding:8px 12px;background:#111318;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#777;flex:none}
+.connected .dot{background:var(--green);box-shadow:0 0 8px var(--green)}
+.connecting .dot{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.panel{background:rgba(21,24,29,.96);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:16px}
+.controls{display:grid;grid-template-columns:1.2fr 1fr .6fr auto;gap:10px}
+label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);
+background:#0f1115;color:var(--text);font:inherit}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+button{font:inherit;color:var(--text);cursor:pointer;border:0}
+.connect,.primary{background:var(--accent);padding:10px 16px;border-radius:10px;font-weight:800}
+.connect:disabled{opacity:.55;cursor:progress}
+.secondary{background:#343943!important}
+.msg{margin-top:9px;font-size:12px;color:var(--muted);line-height:1.5}
+.msg.err{color:#ff8b91}.msg.ok{color:var(--green)}.msg.warn{color:var(--amber)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.tools button{background:#242932;border:1px solid var(--border);border-radius:9px;
+padding:8px 12px;font-size:11px}
+.tools button:disabled{opacity:.5;cursor:progress}
+.chk{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);cursor:pointer}
+.chk input{width:auto;padding:0}
+
+.previewBox{border:1px solid var(--border);border-radius:13px;overflow:hidden;background:#090b0e}
+.previewHead{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#171a20;border-bottom:1px solid var(--border)}
+.previewTitle{font-size:12px;font-weight:900}
+.tag{font-size:10px;background:#282d36;padding:4px 7px;border-radius:999px;color:#bfc5ce}
+.tag.live{background:#3a1d20;color:#ff9ba1;margin-left:auto;margin-right:8px}
+.tag.live.on{background:#4a1a1f;color:#ff7b84;box-shadow:0 0 0 1px #ef5961 inset}
+.preview{aspect-ratio:16/9;display:grid;place-items:center;background:#080a0d}
+.preview img{width:100%;height:100%;object-fit:cover;display:block}
+.placeholder{font-size:12px;color:#626b77}
+.previewFoot{padding:9px 12px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+.title{font-size:13px;font-weight:900}
+
+.transitionBar{display:grid;grid-template-columns:1fr 1fr 130px auto;gap:10px;align-items:end}
+.transitionButtons{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}
+.transBtn{padding:8px 11px;border-radius:9px;background:#242932;border:1px solid var(--border);font-size:11px}
+.transBtn.active{border-color:var(--accent);background:#27203e;box-shadow:0 0 0 1px var(--accent) inset}
+.takeBtn{height:40px;border-radius:10px;background:#ef5961;font-weight:900;padding:0 20px}
+.duration{max-width:130px}
+
+.deck{display:grid;grid-template-columns:repeat(5,minmax(100px,1fr));gap:11px}
+.deckBtn{min-height:112px;border:1px solid var(--border);border-radius:15px;
+background:linear-gradient(145deg,#252a33,#171a20);display:flex;flex-direction:column;
+justify-content:space-between;align-items:center;padding:12px 9px;text-align:center;
+box-shadow:0 5px 16px #0005;position:relative;overflow:hidden}
+.deckBtn:hover{border-color:#606876;transform:translateY(-1px)}
+.deckBtn:active{transform:scale(.97)}
+.deckBtn .icon{font-size:28px;line-height:1}
+.deckBtn .name{font-weight:800;font-size:12px;overflow-wrap:anywhere}
+.deckBtn .hint{font-size:9px;color:#a8afba}
+.deckBtn .edit{position:absolute;right:7px;top:6px;opacity:.4;font-size:10px}
+.deckBtn:hover .edit{opacity:1}
+.deckBtn.active{box-shadow:0 0 0 2px var(--btn-color,#765cff) inset}
+.deckBtn.live{box-shadow:0 0 0 2px #ef5961 inset}
+.sceneButton{--btn-color:#4da3ff}
+
+.scene-list{display:flex;flex-wrap:wrap;gap:7px}
+.scene{padding:7px 10px;border-radius:9px;background:#111318;border:1px solid var(--border);
+font-size:11px;cursor:pointer}
+.scene.active{border-color:#4da3ff;background:#182a3c}
+
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+.modal.open{display:flex}
+.modalCard{width:min(480px,100%);max-height:90vh;overflow:auto;background:#171a20;border:1px solid var(--border);border-radius:16px;padding:16px}
+.modalGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.iconGrid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.iconChoice{width:38px;height:38px;border-radius:8px;background:#252a32;border:1px solid var(--border);font-size:19px}
+.iconChoice.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.btn{padding:9px 13px;border-radius:9px;background:#30353f}
+
+@media(max-width:800px){
+ .controls{grid-template-columns:1fr 1fr}.controls .connect{grid-column:span 2}
+ .transitionBar{grid-template-columns:1fr 1fr}.takeBtn{grid-column:span 2}
+ .deck{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:460px){
+ .deck{grid-template-columns:repeat(2,1fr)}.modalGrid{grid-template-columns:1fr}
+ .transitionBar{grid-template-columns:1fr}.takeBtn{grid-column:auto}
+ .app{padding:12px}.deckBtn{min-height:96px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="top">
+ <div class="brand">
+  <div class="logo">OBS</div>
+  <div>
+   <h1>OBS Web Deck</h1>
+   <div class="sub">Stream Deck-style OBS WebSocket controller · LAN edition</div>
+  </div>
+ </div>
+ <div id="status" class="status"><span class="dot"></span><span id="statusText">Disconnected</span></div>
+</div>
+
+<section class="panel">
+ <div class="controls">
+  <div>
+   <label>OBS WebSocket URL</label>
+   <input id="url" value="ws://127.0.0.1:4455" autocomplete="off" spellcheck="false">
+  </div>
+  <div>
+   <label>Password</label>
+   <input id="password" type="password" placeholder="OBS WebSocket password" autocomplete="current-password">
+  </div>
+  <div>
+   <label>Columns</label>
+   <select id="cols"><option>5</option><option>4</option><option>3</option><option>2</option></select>
+  </div>
+  <button id="connect" class="connect">Connect</button>
+ </div>
+
+ <div class="tools">
+  <button id="scan">🔍 Find OBS on this network</button>
+  <button id="resetUrl">↺ Use this server's IP</button>
+  <label class="chk"><input id="remember" type="checkbox"> Remember URL &amp; password on this device</label>
+ </div>
+
+ <div id="urlHint" class="small" style="margin-top:8px;line-height:1.5"></div>
+ <div id="msg" class="msg">OBS → Tools → WebSocket Server Settings → Enable WebSocket Server.</div>
+</section>
+
+<section class="panel">
+ <div class="row">
+  <div>
+   <div class="title">Scene Preview</div>
+   <div class="small">Preview the selected scene before taking it live.</div>
+  </div>
+  <button id="refreshPreview" class="btn">↻ Refresh</button>
+ </div>
+ <div class="previewBox">
+  <div class="previewHead">
+   <span class="previewTitle">PREVIEW</span>
+   <span id="liveTag" class="tag live">LIVE: —</span>
+   <span id="previewTag" class="tag">No scene selected</span>
+  </div>
+  <div id="scenePreview" class="preview"><div class="placeholder">Select a scene</div></div>
+  <div id="sceneName" class="previewFoot">Scene: —</div>
+ </div>
+</section>
+
+<section class="panel">
+ <div class="row">
+  <div>
+   <div class="title">Transition</div>
+   <div class="small">Select a transition, then press TAKE.</div>
+  </div>
+  <div class="small" id="transitionStatus">—</div>
+ </div>
+
+ <div class="transitionBar">
+  <div>
+   <label>Transition</label>
+   <div id="transitionButtons" class="transitionButtons"></div>
+  </div>
+  <div>
+   <label>Duration</label>
+   <input id="duration" class="duration" type="number" min="0" max="10000" step="50" value="300">
+  </div>
+  <div>
+   <label>Mode</label>
+   <select id="transitionMode">
+    <option value="cut">Cut</option>
+    <option value="transition">Transition</option>
+   </select>
+  </div>
+  <button id="take" class="takeBtn">TAKE</button>
+ </div>
+</section>
+
+<section class="panel">
+ <div class="row">
+  <div>
+   <div class="title">Deck</div>
+   <div class="small">Click = action · ✎ = customize icon/color/name</div>
+  </div>
+  <div class="small" id="sceneCount">0 scenes</div>
+ </div>
+ <div id="deck" class="deck"></div>
+</section>
+
+<section class="panel">
+ <div class="row">
+  <div class="title">Scenes</div>
+  <div class="small">Click a scene to preview</div>
+ </div>
+ <div id="scenes" class="scene-list">
+  <span class="small">Connect to OBS to load scenes.</span>
+ </div>
+</section>
+
+</div>
+
+<div id="modal" class="modal">
+ <div class="modalCard">
+  <div class="title" style="margin-bottom:12px">Customize Button</div>
+  <div class="modalGrid">
+   <div><label>Button label</label><input id="editName"></div>
+   <div><label>Color</label><input id="editColor" type="color" value="#765cff" style="height:40px"></div>
+  </div>
+  <div style="margin-top:12px">
+   <label>Icon</label>
+   <div id="iconGrid" class="iconGrid"></div>
+  </div>
+  <div class="modalActions">
+   <button id="cancelEdit" class="btn">Cancel</button>
+   <button id="saveEdit" class="primary">Save</button>
+  </div>
+ </div>
+</div>
+
+<script>
+"use strict";
+
+const $=id=>document.getElementById(id);
+
+let ws=null;
+let pending=new Map();
+let scenes=[];
+let currentScene="";
+let previewScene="";
+let connected=false;
+let editingIndex=null;
+let selectedTransition="";
+let manualUrl=false;
+let scanAbort=false;
+
+/* ---------------------------------------------------------------- hosting --
+   This deck is normally served over plain HTTP from the OBS PC itself (Caddy
+   on port 8080). Whatever host you reached this page on is, by definition, an
+   address your current device can route to — so that same host is the correct
+   address for OBS WebSocket too. Reaching the page as http://192.168.1.23:8080
+   therefore implies ws://192.168.1.23:4455, and that is what works from a
+   phone, a tablet, or any other machine on the LAN.
+
+   Two cases break that assumption, and both are handled below:
+     * opened from the OBS PC as http://localhost:8080 -> localhost works;
+     * opened as a file:// page -> fall back to loopback.
+   And one case is impossible to fix in the browser: an https:// page is
+   forbidden from opening a plain ws:// socket to any non-loopback host, which
+   is exactly why this edition is served over HTTP instead of a tunnel.
+--------------------------------------------------------------------------- */
+
+const isHttps=location.protocol==="https:";
+const isFile=location.protocol==="file:";
+const OBS_PORT="4455";
+
+function pageHost(){return location.hostname||"127.0.0.1"}
+
+function isLoopbackHost(host){
+ return host==="localhost"||host==="127.0.0.1"||host==="[::1]"||host==="::1"||host==="";
+}
+
+function defaultUrl(){
+ return "ws://"+pageHost()+":"+OBS_PORT;
+}
+
+function urlHost(url){
+ try{return new URL(url).hostname}catch(e){return ""}
+}
+
+/* ------------------------------------------------------------- persistence --
+   The password lands in localStorage only when you explicitly ask for it, and
+   the page says so out loud. An empty password is never stored.
+--------------------------------------------------------------------------- */
+
+const LS_URL="obsDeckUrl", LS_PW="obsDeckPassword", LS_REMEMBER="obsDeckRemember",
+      LS_COLS="obsDeckCols", LS_BUTTONS="obsDeckButtons";
+
+function saveSettings(){
+ try{
+  if($("remember").checked){
+   localStorage.setItem(LS_REMEMBER,"1");
+   localStorage.setItem(LS_URL,$("url").value.trim());
+   if($("password").value)localStorage.setItem(LS_PW,$("password").value);
+  }else{
+   localStorage.removeItem(LS_REMEMBER);
+   localStorage.removeItem(LS_URL);
+   localStorage.removeItem(LS_PW);
+  }
+  localStorage.setItem(LS_COLS,$("cols").value);
+ }catch(e){}
+}
+
+function loadSettings(){
+ let remember=false;
+ try{
+  remember=localStorage.getItem(LS_REMEMBER)==="1";
+  if(remember){
+   $("remember").checked=true;
+   const u=localStorage.getItem(LS_URL);
+   if(u){$("url").value=u;manualUrl=true}
+   const p=localStorage.getItem(LS_PW);
+   if(p)$("password").value=p;
+  }
+  const c=localStorage.getItem(LS_COLS);
+  if(c&&["2","3","4","5"].includes(c))$("cols").value=c;
+ }catch(e){}
+ return remember;
+}
+
+function updateUrlHint(){
+ const url=$("url").value.trim();
+ const hint=$("urlHint");
+ const host=urlHost(url);
+
+ if(isHttps&&url.startsWith("ws://")&&host&&!isLoopbackHost(host)){
+  hint.innerHTML="This page is served over HTTPS, so the browser blocks a plain <b>ws://</b> link to another device. Serve this deck over plain HTTP on the LAN instead (see <b>README.md</b>).";
+  hint.style.color="#e2ad4c";
+  return;
+ }
+
+ if(isFile){
+  hint.innerHTML="Opened straight from disk, so this only reaches OBS on <b>this</b> PC. To control OBS from a phone or another machine, serve the folder over the LAN and open <b>http://&lt;obs-pc-ip&gt;:8080</b>.";
+  hint.style.color="";
+  return;
+ }
+
+ if(isLoopbackHost(host)){
+  hint.innerHTML="This address (<b>"+pageHost()+"</b>) only works on the OBS PC itself. Reached from another device? Use the OBS PC's LAN IP, e.g. <b>ws://192.168.1.23:4455</b>.";
+ }else{
+  hint.innerHTML="Pointing at <b>"+host+"</b> — on a phone or another PC that is the OBS machine's LAN IP, which is exactly right. Make sure OBS WebSocket is enabled and TCP 4455 is allowed through the OBS PC's firewall.";
+ }
+ hint.style.color="";
+}
+
+function say(t,kind){
+ const m=$("msg");
+ m.textContent=t;
+ m.className="msg"+(kind?" "+kind:"");
+}
+
+function setStatus(state,text){
+ connected=state==="ok";
+ const el=$("status");
+ el.classList.toggle("connected",state==="ok");
+ el.classList.toggle("connecting",state==="connecting");
+ $("statusText").textContent=text;
+}
+
+/* ---------------------------------------------------------------- protocol --
+   obs-websocket v5 over a raw socket: op 0 hello, op 1 identify, op 2
+   identified, op 5 event, op 6 request, op 7 request response.
+--------------------------------------------------------------------------- */
+
+function uuid(){
+ return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random();
+}
+
+function send(type,data={}){
+ return new Promise((resolve,reject)=>{
+  if(!ws||ws.readyState!==WebSocket.OPEN)return reject(new Error("Not connected"));
+
+  const requestId=uuid();
+  pending.set(requestId,{resolve,reject});
+
+  ws.send(JSON.stringify({op:6,d:{requestType:type,requestId,requestData:data}}));
+
+  setTimeout(()=>{
+   if(pending.has(requestId)){
+    pending.delete(requestId);
+    reject(new Error("Request timeout"));
+   }
+  },8000);
+ });
+}
+
+/* obs-websocket v5 authentication wants base64-encoded SHA-256 digests, per the
+   protocol reference. The widely copied hex version of this routine silently
+   fails to authenticate against real OBS, so both steps are base64 here:
+
+     secret        = base64(sha256(password + salt))
+     authentication = base64(sha256(secret + challenge))          */
+async function sha256(t){
+ const bytes=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)));
+ let binary="";
+ for(let i=0;i<bytes.length;i++)binary+=String.fromCharCode(bytes[i]);
+ return btoa(binary);
+}
+
+async function auth(password,salt,challenge){
+ const secret=await sha256(password+salt);
+ return sha256(secret+challenge);
+}
+
+function escapeHtml(s){
+ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* ----------------------------------------------------------------- buttons -- */
+
+const defaultButtons=[
+ {icon:"🎬",name:"START STREAM",action:"startStream",hint:"Go live",color:"#ef5961"},
+ {icon:"⏹",name:"STOP STREAM",action:"stopStream",hint:"End live",color:"#ef5961"},
+ {icon:"●",name:"START REC",action:"startRecord",hint:"Record",color:"#d46a92"},
+ {icon:"■",name:"STOP REC",action:"stopRecord",hint:"Stop recording",color:"#d46a92"},
+ {icon:"⏸",name:"PAUSE REC",action:"pauseRecord",hint:"Toggle pause",color:"#e2ad4c"},
+ {icon:"🔄",name:"REFRESH",action:"refresh",hint:"Reload OBS",color:"#765cff"},
+ {icon:"🎙",name:"MUTE MIC",action:"muteMic",hint:"Customize source",color:"#4da3ff"},
+ {icon:"🖥",name:"STUDIO",action:"studio",hint:"Toggle Studio",color:"#765cff"}
+];
+
+const icons=["🎬","⏹","▶","●","■","⏸","⏺","🔄","🎙","🔇","🔊","🖥","📺","🎞️","📷","💡","⚡","⭐","❤️","🚨","🟢","🔴","🟡","🔵","⚙️","🎧","🎤","📝","🏠","🎥"];
+
+let custom;
+try{
+ custom=JSON.parse(localStorage.getItem(LS_BUTTONS)||"null")||defaultButtons.map(b=>Object.assign({},b));
+}catch(e){
+ custom=defaultButtons.map(b=>Object.assign({},b));
+}
+
+function renderDeck(){
+ const deck=$("deck");
+ deck.innerHTML="";
+
+ custom.forEach((item,i)=>{
+  const b=document.createElement("button");
+  b.className="deckBtn";
+  b.style.setProperty("--btn-color",item.color||"#765cff");
+
+  b.innerHTML=`
+   <span class="edit">✎</span>
+   <span class="icon">${escapeHtml(item.icon)}</span>
+   <span class="name">${escapeHtml(item.name)}</span>
+   <span class="hint">${escapeHtml(item.hint||"")}</span>
+  `;
+
+  b.addEventListener("click",e=>{
+   if(e.target.classList.contains("edit"))openEdit(i);
+   else runAction(item.action,b);
+  });
+
+  deck.appendChild(b);
+ });
+
+ scenes.forEach(s=>{
+  const b=document.createElement("button");
+  b.className="deckBtn sceneButton";
+  b.dataset.scene=s;
+  b.style.setProperty("--btn-color","#4da3ff");
+
+  b.innerHTML=`
+   <span class="edit">SCENE</span>
+   <span class="icon">🎞️</span>
+   <span class="name">${escapeHtml(s)}</span>
+   <span class="hint">Preview / Take</span>
+  `;
+
+  b.addEventListener("click",async()=>{
+   previewScene=s;
+   await updateScenePreview();
+   if($("transitionMode").value==="cut"){
+    await runScene(s);
+   }else{
+    say("Scene previewed: "+s+". Press TAKE to go live.");
+    updateDeckState();
+   }
+  });
+
+  deck.appendChild(b);
+ });
+
+ updateDeckState();
+}
+
+function updateDeckState(){
+ document.querySelectorAll(".sceneButton").forEach(b=>{
+  b.classList.toggle("active",b.dataset.scene===currentScene);
+  b.classList.toggle("live",b.dataset.scene===currentScene);
+ });
+
+ /* The preview deliberately does NOT follow the program scene: preview is the
+    scene you are about to take. Show what is actually live instead, so an
+    external switch in OBS is still visible here. */
+ const tag=$("liveTag");
+ if(tag){
+  tag.textContent="LIVE: "+(currentScene||"—");
+  tag.classList.toggle("on",!!currentScene);
+ }
+}
+
+/* ------------------------------------------------------------------ actions -- */
+
+async function runScene(scene){
+ if(!requireConnection())return;
+ try{
+  await send("SetCurrentProgramScene",{sceneName:scene});
+  currentScene=scene;
+  updateDeckState();
+  await loadScenes();
+  await updateScenePreview();
+  say("Program switched to "+scene,"ok");
+ }catch(e){
+  say("OBS error: "+e.message,"err");
+ }
+}
+
+function requireConnection(){
+ if(connected)return true;
+ say("Connect to OBS first.","warn");
+ return false;
+}
+
+async function runAction(action,b){
+ if(!requireConnection())return;
+ try{
+  if(action==="startStream"){
+   await send("StartStream");
+   say("Stream started","ok");
+  }
+  else if(action==="stopStream"){
+   await send("StopStream");
+   say("Stream stopped","ok");
+  }
+  else if(action==="startRecord"){
+   await send("StartRecord");
+   say("Recording started","ok");
+  }
+  else if(action==="stopRecord"){
+   await send("StopRecord");
+   say("Recording stopped","ok");
+  }
+  else if(action==="pauseRecord"){
+   const r=await send("GetRecordStatus");
+   await send(r.responseData.outputPaused?"ResumeRecord":"PauseRecord");
+   say("Recording pause state toggled","ok");
+  }
+  else if(action==="refresh"){
+   await loadScenes();
+   await refreshPreview();
+   await loadTransitions();
+   say("OBS state refreshed","ok");
+  }
+  else if(action==="studio"){
+   const r=await send("GetStudioModeEnabled");
+   await send("SetStudioModeEnabled",{studioModeEnabled:!r.responseData.studioModeEnabled});
+   say("Studio Mode "+(r.responseData.studioModeEnabled?"disabled":"enabled"),"ok");
+  }
+  else if(action==="muteMic"){
+   say("Customize this button with an OBS input source.","warn");
+  }
+ }catch(e){
+  say("OBS error: "+e.message,"err");
+ }
+}
+
+/* ----------------------------------------------------------------- preview -- */
+
+async function screenshot(sourceName){
+ try{
+  const r=await send("GetSourceScreenshot",{
+   sourceName,imageFormat:"jpeg",imageWidth:960,imageHeight:540
+  });
+  return r.responseData.imageData;
+ }catch(e){
+  return null;
+ }
+}
+
+function showImage(container,data){
+ container.innerHTML="";
+ if(data){
+  const img=document.createElement("img");
+  img.alt="Scene preview";
+  img.src=data;
+  container.appendChild(img);
+ }else{
+  container.innerHTML='<div class="placeholder">Preview unavailable</div>';
+ }
+}
+
+async function refreshPreview(){
+ if(!connected)return;
+ if(!previewScene)previewScene=currentScene||scenes[0]||"";
+ await updateScenePreview();
+}
+
+async function updateScenePreview(){
+ $("sceneName").textContent="Scene: "+(previewScene||"—");
+ $("previewTag").textContent=previewScene||"No scene selected";
+
+ if(!connected||!previewScene){
+  $("scenePreview").innerHTML='<div class="placeholder">Select a scene</div>';
+  return;
+ }
+
+ showImage($("scenePreview"),await screenshot(previewScene));
+}
+
+/* ---------------------------------------------------------------- scene load -- */
+
+async function loadScenes(){
+ const r=await send("GetSceneList");
+
+ scenes=(r.responseData.scenes||[]).map(x=>x.sceneName).reverse();
+ currentScene=r.responseData.currentProgramSceneName||"";
+
+ if(!previewScene)previewScene=currentScene;
+
+ $("sceneCount").textContent=scenes.length+" scenes";
+
+ $("scenes").innerHTML=scenes.map(s=>`
+  <span class="scene ${s===currentScene?"active":""}" data-scene="${escapeHtml(s)}">
+   ${escapeHtml(s)}${s===currentScene?" • LIVE":""}
+  </span>
+ `).join("");
+
+ $("scenes").querySelectorAll(".scene").forEach(el=>{
+  el.addEventListener("click",async()=>{
+   previewScene=el.dataset.scene;
+   await updateScenePreview();
+   $("scenes").querySelectorAll(".scene").forEach(x=>x.classList.toggle("active",x===el));
+   say("Preview: "+previewScene);
+  });
+ });
+
+ renderDeck();
+}
+
+async function loadTransitions(){
+ try{
+  const r=await send("GetTransitionList");
+  const list=r.responseData.transitions||[];
+  const box=$("transitionButtons");
+  box.innerHTML="";
+
+  list.forEach(t=>{
+   const b=document.createElement("button");
+   b.className="transBtn";
+   b.textContent=t.transitionName;
+
+   b.addEventListener("click",async()=>{
+    selectedTransition=t.transitionName;
+    document.querySelectorAll(".transBtn").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    try{
+     await send("SetCurrentSceneTransition",{transitionName:selectedTransition});
+     $("transitionStatus").textContent="Selected: "+selectedTransition;
+    }catch(e){
+     say("OBS error: "+e.message,"err");
+    }
+   });
+
+   box.appendChild(b);
+  });
+
+  if(list.length){
+   selectedTransition=list[0].transitionName;
+   box.firstElementChild.classList.add("active");
+   $("transitionStatus").textContent="Selected: "+selectedTransition;
+  }
+ }catch(e){
+  $("transitionButtons").innerHTML='<span class="small">Transition list unavailable.</span>';
+ }
+}
+
+async function takeScene(){
+ if(!requireConnection())return;
+
+ if(!previewScene){
+  say("Select a scene first.","warn");
+  return;
+ }
+
+ try{
+  if($("transitionMode").value==="cut"){
+   await send("SetCurrentProgramScene",{sceneName:previewScene});
+  }else{
+   if(selectedTransition){
+    await send("SetCurrentSceneTransition",{transitionName:selectedTransition});
+   }
+   const duration=parseInt($("duration").value||"300",10);
+   if(duration>=0){
+    try{await send("SetCurrentSceneTransitionDuration",{transitionDuration:duration})}catch(e){}
+   }
+   await send("TriggerStudioModeTransition");
+  }
+
+  currentScene=previewScene;
+  updateDeckState();
+  await loadScenes();
+  say("TAKE: "+currentScene,"ok");
+ }catch(e){
+  say("Transition error: "+e.message,"err");
+ }
+}
+
+/* --------------------------------------------------------------------- edit -- */
+
+function openEdit(i){
+ editingIndex=i;
+ const x=custom[i];
+
+ $("editName").value=x.name;
+ $("editColor").value=x.color||"#765cff";
+
+ $("iconGrid").innerHTML=icons.map(ic=>`
+  <button type="button" class="iconChoice ${ic===x.icon?"selected":""}" data-icon="${ic}">${ic}</button>
+ `).join("");
+
+ $("iconGrid").querySelectorAll(".iconChoice").forEach(b=>{
+  b.addEventListener("click",()=>{
+   $("iconGrid").querySelectorAll(".iconChoice").forEach(y=>y.classList.remove("selected"));
+   b.classList.add("selected");
+  });
+ });
+
+ $("modal").classList.add("open");
+}
+
+$("saveEdit").addEventListener("click",()=>{
+ if(editingIndex===null)return;
+ const selected=$("iconGrid").querySelector(".selected");
+
+ custom[editingIndex].name=$("editName").value.trim()||"BUTTON";
+ custom[editingIndex].color=$("editColor").value;
+ custom[editingIndex].icon=selected?selected.dataset.icon:"🎬";
+
+ try{localStorage.setItem(LS_BUTTONS,JSON.stringify(custom))}catch(e){}
+
+ $("modal").classList.remove("open");
+ renderDeck();
+});
+
+$("cancelEdit").addEventListener("click",()=>$("modal").classList.remove("open"));
+
+$("modal").addEventListener("click",e=>{
+ if(e.target===$("modal"))$("modal").classList.remove("open");
+});
+
+/* ------------------------------------------------------------------ connect -- */
+
+function closeWS(){
+ if(ws){
+  try{ws.close()}catch(e){}
+  ws=null;
+ }
+ pending.forEach(x=>x.reject(new Error("Disconnected")));
+ pending.clear();
+ setStatus("off","Disconnected");
+}
+
+function setConnectButton(connecting){
+ const b=$("connect");
+ b.disabled=connecting;
+ b.textContent=connecting?"Connecting…":(connected?"Disconnect":"Connect");
+ b.classList.toggle("secondary",connected);
+}
+
+async function connectTo(url,password){
+ let target;
+ try{target=new URL(url)}catch(e){
+  say("That's not a valid address. Use the form ws://host:port.","err");
+  return false;
+ }
+ if(target.protocol!=="ws:"&&target.protocol!=="wss:"){
+  say("The address must start with ws:// or wss://.","err");
+  return false;
+ }
+
+ if(isHttps&&url.startsWith("ws://")&&!isLoopbackHost(target.hostname)){
+  say("Blocked by the browser: an HTTPS page cannot open a plain ws:// connection to another device. Serve this deck over HTTP on the LAN.","err");
+  return false;
+ }
+
+ const port=target.port||OBS_PORT;
+ setStatus("connecting","Connecting…");
+ setConnectButton(true);
+ say("Connecting to "+target.hostname+":"+port+"…");
+
+ let settled=false;
+
+ const connectTimeout=setTimeout(()=>{
+  if(settled)return;
+  settled=true;
+  say("No response from "+target.hostname+":"+port+". Check that OBS WebSocket is enabled, that the address/port are right, and that the OBS PC's firewall allows TCP "+port+" from this device.","err");
+  closeWS();
+  setConnectButton(false);
+ },7000);
+
+ try{
+  ws=new WebSocket(url);
+
+  ws.onmessage=async ev=>{
+   clearTimeout(connectTimeout);
+   const m=JSON.parse(ev.data);
+
+   if(m.op===0){
+    const identify={rpcVersion:1,eventSubscriptions:0x7ff};
+
+    if(m.d.authentication&&password){
+     identify.authentication=await auth(password,m.d.authentication.salt,m.d.authentication.challenge);
+    }else if(m.d.authentication&&!password){
+     say("OBS wants a password but none was entered.","err");
+     settled=true;
+     closeWS();
+     setConnectButton(false);
+     return;
+    }
+
+    ws.send(JSON.stringify({op:1,d:identify}));
+   }
+
+   else if(m.op===2){
+    settled=true;
+    setStatus("ok","Connected");
+    setConnectButton(false);
+    say("Connected to OBS.","ok");
+    if($("remember").checked)saveSettings();
+
+    try{
+     await loadScenes();
+     await loadTransitions();
+     await refreshPreview();
+    }catch(e){
+     say("Connected, but loading OBS state failed: "+e.message,"err");
+    }
+   }
+
+   else if(m.op===9){
+    settled=true;
+    say("OBS rejected the password. Check it matches Tools → WebSocket Server Settings.","err");
+    closeWS();
+    setConnectButton(false);
+   }
+
+   else if(m.op===7){
+    const p=pending.get(m.d.requestId);
+    if(!p)return;
+    pending.delete(m.d.requestId);
+    if(m.d.requestStatus.result)p.resolve(m.d);
+    else p.reject(new Error(m.d.requestStatus.comment||"OBS request failed"));
+   }
+
+   else if(m.op===5){
+    if(m.d.eventType==="CurrentProgramSceneChanged"){
+     currentScene=m.d.eventData.sceneName;
+     updateDeckState();
+     loadScenes().catch(()=>{});
+    }
+   }
+  };
+
+  ws.onerror=()=>{/* details arrive on close */};
+
+  ws.onclose=ev=>{
+   clearTimeout(connectTimeout);
+   const wasConnected=connected;
+
+   if(!settled){
+    settled=true;
+    if(ev.reason)say("OBS closed the connection: "+ev.reason+" (code "+ev.code+")","err");
+    else if(ev.code===4009)say("OBS rejected the password. Check it matches Tools → WebSocket Server Settings.","err");
+    else say("WebSocket failed before connecting. Check the OBS PC's address and port, that WebSocket is enabled, and that the firewall allows TCP "+port+".","err");
+   }else if(wasConnected){
+    say("Connection to OBS lost.","warn");
+   }
+
+   if(ws&&ws.readyState!==WebSocket.OPEN)ws=null;
+   pending.forEach(x=>x.reject(new Error("Disconnected")));
+   pending.clear();
+   setStatus("off","Disconnected");
+   setConnectButton(false);
+  };
+
+  return true;
+ }catch(e){
+  clearTimeout(connectTimeout);
+  say(e.message,"err");
+  closeWS();
+  setConnectButton(false);
+  return false;
+ }
+}
+
+$("connect").addEventListener("click",async()=>{
+ if(connected||(ws&&ws.readyState===WebSocket.OPEN)){
+  closeWS();
+  setConnectButton(false);
+  return;
+ }
+ const url=$("url").value.trim();
+ if(!url){
+  say("Enter your OBS WebSocket address first.","err");
+  return;
+ }
+ await connectTo(url,$("password").value);
+});
+
+/* --------------------------------------------------------------------- scan --
+   Browsers cannot discover OBS on their own, so probe the page host's own /24
+   on the OBS WebSocket port. A device that answers at all is an OBS candidate;
+   the first one that completes a handshake wins.
+--------------------------------------------------------------------------- */
+
+function probe(host,port,timeout){
+ return new Promise(resolve=>{
+  let done=false;
+  let sock;
+  const finish=ok=>{
+   if(done)return;
+   done=true;
+   try{sock&&sock.close()}catch(e){}
+   resolve(ok?host:null);
+  };
+  const timer=setTimeout(()=>finish(false),timeout);
+  try{
+   sock=new WebSocket("ws://"+host+":"+port);
+   sock.onopen=()=>{clearTimeout(timer);finish(true)};
+   sock.onerror=()=>{clearTimeout(timer);finish(false)};
+   sock.onclose=()=>{clearTimeout(timer);finish(false)};
+  }catch(e){
+   clearTimeout(timer);
+   finish(false);
+  }
+ });
+}
+
+$("scan").addEventListener("click",async()=>{
+ if(!/^\d+\.\d+\.\d+\.\d+$/.test(pageHost())){
+  say("This page was not reached by IP address, so there is no subnet to scan. Enter the OBS PC's IP manually.","warn");
+  return;
+ }
+
+ const parts=pageHost().split(".");
+ const base=parts.slice(0,3).join(".");
+ const btn=$("scan");
+ btn.disabled=true;
+ scanAbort=false;
+
+ let found=null;
+ let probed=0;
+
+ function report(label){
+  $("statusText").textContent="Scanning "+probed+"…";
+  say(label+" — "+probed+" addresses checked…");
+ }
+
+ // Probe a list concurrently and resolve as soon as one answers.
+ async function sweep(hosts,label){
+  const CONCURRENCY=32;
+  let cursor=0;
+
+  async function worker(){
+   while(cursor<hosts.length&&!found&&!scanAbort){
+    const host=hosts[cursor++];
+    probed++;
+    if(probed%48===0)report(label);
+    const ok=await probe(host,OBS_PORT,650);
+    if(ok&&!found)found=ok;
+   }
+  }
+
+  await Promise.all(Array.from({length:CONCURRENCY},worker));
+ }
+
+ // 1) The subnet this page was served from — the overwhelmingly common case.
+ const local=[];
+ for(let i=1;i<=254;i++){
+  if(base+"."+i!==pageHost())local.push(base+"."+i);
+ }
+ await sweep(local,"Scanning "+base+".0/24");
+
+ // 2) Only if that failed, the other /24s sharing our /16 and a few defaults.
+ if(!found&&!scanAbort){
+  const alt=[];
+  const prefixes=[base.split(".").slice(0,2).join(".")+".0",
+                  base.split(".").slice(0,2).join(".")+".1",
+                  "192.168.0","192.168.1","192.168.2","10.0.0","10.0.1"];
+  prefixes.forEach(p=>{
+   if(p===base)return;
+   for(let i=1;i<=254;i++)alt.push(p+"."+i);
+  });
+  await sweep(alt,"Scanning other subnets");
+ }
+
+ btn.disabled=false;
+ $("statusText").textContent="Disconnected";
+
+ if(found){
+  $("url").value="ws://"+found+":"+OBS_PORT;
+  manualUrl=true;
+  updateUrlHint();
+  say("Found an OBS WebSocket server at "+found+". Press Connect.","ok");
+ }else{
+  say("Checked "+probed+" addresses and found no OBS WebSocket server. On the OBS PC: enable Tools → WebSocket Server Settings, then allow TCP "+OBS_PORT+" through its firewall so other devices can reach it (see README.md).","err");
+ }
+});
+
+$("resetUrl").addEventListener("click",()=>{
+ $("url").value=defaultUrl();
+ manualUrl=true;
+ updateUrlHint();
+ say("Address set to this server's own IP: "+defaultUrl());
+});
+
+/* ------------------------------------------------------------------- wiring -- */
+
+$("take").addEventListener("click",takeScene);
+$("refreshPreview").addEventListener("click",refreshPreview);
+
+$("transitionMode").addEventListener("change",()=>{
+ $("take").textContent=$("transitionMode").value==="cut"?"CUT":"TAKE";
+});
+
+function applyColumns(){
+ const n=$("cols").value;
+ $("deck").style.gridTemplateColumns="repeat("+n+",minmax(100px,1fr))";
+}
+
+$("cols").addEventListener("change",()=>{applyColumns();saveSettings()});
+
+$("url").addEventListener("input",()=>{manualUrl=true;updateUrlHint()});
+$("url").addEventListener("change",saveSettings);
+$("password").addEventListener("change",saveSettings);
+$("remember").addEventListener("change",()=>{
+ saveSettings();
+ say($("remember").checked
+  ? "URL and password will be remembered in this browser."
+  : "Saved URL and password cleared from this browser.");
+});
+
+window.addEventListener("beforeunload",()=>{try{ws&&ws.close()}catch(e){}});
+
+// Keep the deck aligned with the host that actually served it.
+const remembered=loadSettings();
+if(!remembered||!manualUrl){
+ if(!isFile)$("url").value=defaultUrl();
+}
+
+if(isHttps){
+ $("url").placeholder="wss://your-tunnel-address:port";
+}
+
+$("take").textContent=$("transitionMode").value==="cut"?"CUT":"TAKE";
+applyColumns();
+updateUrlHint();
+renderDeck();
+</script>
+</body>
+</html>

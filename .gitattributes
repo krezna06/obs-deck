@@ -1,0 +1,13 @@
+# Keep shell scripts, the Caddyfile, Docker Compose and Python LF-only.
+# They are used from Linux containers (Caddy) and from bash, where CRLF breaks
+# shebangs and Caddyfile parsing. PowerShell and Markdown are fine either way.
+* text=auto eol=lf
+
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mp3 binary

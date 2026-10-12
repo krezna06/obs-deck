@@ -1,0 +1,45 @@
+# OBS Web Deck — LAN only, plain HTTP.
+#
+# Why plain HTTP and not HTTPS:
+#   An HTTPS page is forbidden by every browser from opening a plain ws://
+#   socket to a host that is not loopback. OBS Studio's WebSocket server speaks
+#   plain ws:// only, so serving this deck over HTTPS would break the one thing
+#   it exists to do. Serving it over HTTP on the LAN keeps ws:// legal, so any
+#   phone or tablet on the same Wi-Fi can drive OBS directly.
+#
+# Nothing here is reachable from the internet. There is no tunnel, no port
+# forward, and no certificate. Access is limited to devices on your own LAN.
+
+{
+	# 0.0.0.0 = answer on every interface, which is what makes phones work.
+	# Change to 127.0.0.1:8080 to make it reachable from the OBS PC only.
+	http_port 8080
+	auto_https off
+	admin off
+}
+
+http://:8080 {
+	root * /srv
+	encode gzip
+
+	# The deck is a single file; never let a phone cache a stale build.
+	header Cache-Control "no-store"
+	header X-Content-Type-Options "nosniff"
+	header Referrer-Policy "no-referrer"
+
+	# The deck must be able to open ws:// to the OBS PC on 4455. That is a
+	# different origin and a different port, so it needs an explicit allowance.
+	# http://<obs-pc-ip>:8080 is allowed to reach ws://<obs-pc-ip>:4455.
+	header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src ws: wss:; base-uri 'none'; form-action 'none'"
+
+	# Optional: uncomment these three lines to require a password before the
+	# deck loads at all. Generate the hash with:
+	#   docker compose exec caddy caddy hash-password --plaintext 'your-password'
+	#
+	# basic_auth {
+	# 	krezna $2a$14$REPLACE_WITH_GENERATED_HASH
+	# }
+
+	# Single page only — do not list the directory.
+	file_server
+}

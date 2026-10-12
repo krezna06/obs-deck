@@ -1,0 +1,6 @@
+# Verification report written by tools/ws_selftest.py
+tools/.ws-selftest-report.json
+
+# Python bytecode from the selftest tool
+__pycache__/
+*.pyc

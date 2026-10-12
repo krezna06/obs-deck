@@ -1,0 +1,32 @@
+# OBS Web Deck — LAN-only hosting.
+#
+# Caddy serves ./site on port 8080 of the OBS PC. Any device on the same
+# network can then open http://<obs-pc-ip>:8080 and drive OBS over
+# ws://<obs-pc-ip>:4455. No tunnel, no port forwarding, no certificates.
+#
+#   docker compose up -d      start
+#   docker compose logs -f    watch
+#   docker compose down       stop
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: obs-web-deck
+    restart: unless-stopped
+    ports:
+      # host:container — 8080 is deliberately not 80 so nothing else clashes.
+      - "8080:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./site:/srv:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  caddy_data:
+  caddy_config:
