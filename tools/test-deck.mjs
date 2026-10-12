@@ -1,7 +1,7 @@
 /*
   End-to-end check for the deck's inline script.
 
-  This does not reimplement the deck. It loads site/index.html, extracts the real
+  This does not reimplement the deck. It loads index.html, extracts the real
   inline <script>, runs it against a small DOM shim, and drives it through:
 
     1. auto-detection of the OBS address from the host that served the page
@@ -29,7 +29,7 @@ import { startMockObs } from './mock-obs.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
-const html = readFileSync(join(root, 'site', 'index.html'), 'utf8');
+const html = readFileSync(join(root, 'index.html'), 'utf8');
 const TRACE = process.env.DECK_TRACE === '1';
 
 let pass = 0;

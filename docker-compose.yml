@@ -1,6 +1,6 @@
 # OBS Web Deck — LAN-only hosting.
 #
-# Caddy serves ./site on port 8080 of the OBS PC. Any device on the same
+# Caddy serves this repository on port 8080 of the OBS PC. Any device on the same
 # network can then open http://<obs-pc-ip>:8080 and drive OBS over
 # ws://<obs-pc-ip>:4455. No tunnel, no port forwarding, no certificates.
 #
@@ -18,7 +18,9 @@ services:
       - "8080:8080"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./site:/srv:ro
+      # The deck lives at the repository root, so the repository is the document
+      # root. This keeps a single copy of index.html for both Docker and Pages.
+      - ./:/srv:ro
       - caddy_data:/data
       - caddy_config:/config
     healthcheck:

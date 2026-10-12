@@ -1,0 +1,7 @@
+# Serve files exactly as committed.
+#
+# Without this, GitHub Pages runs Jekyll, which renders README.md as the site
+# root, mangles paths that begin with an underscore, and hides files it decides
+# are not web content. The deck is a single static HTML file and needs none of
+# that: this file tells Pages to publish the tree verbatim, so
+# https://krezna06.github.io/obs-deck/ serves index.html as-is.

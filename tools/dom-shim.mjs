@@ -1,7 +1,7 @@
 /*
   A deliberately small HTML/DOM shim.
 
-  Purpose: run the deck's own inline <script> straight out of site/index.html
+  Purpose: run the deck's own inline <script> straight out of index.html
   under Node, so the connection logic, SHA-256 auth handshake, request plumbing
   and button rendering are all exercised for real rather than reimplemented in
   the test. It supports only the element/attribute/selector surface the deck

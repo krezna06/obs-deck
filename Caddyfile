@@ -19,6 +19,9 @@
 }
 
 http://:8080 {
+	# The deck is index.html at the repository root, so the whole repository is
+	# the document root. That keeps one copy of the deck: the same file that is
+	# committed is the one served here and published by GitHub Pages.
 	root * /srv
 	encode gzip
 

@@ -77,7 +77,7 @@ if (-not $docker) {
   Write-Bad 'Docker was not found on PATH.'
   Write-Host '   Install Docker Desktop, open it, wait for "Engine running", then run this again.' -ForegroundColor Gray
   Write-Host '   No Docker? You can still use this deck from the OBS PC itself:' -ForegroundColor Gray
-  Write-Host '     python -m http.server 8080 --directory .\site' -ForegroundColor Gray
+  Write-Host '     python -m http.server 8080 --directory .' -ForegroundColor Gray
   exit 1
 }
 

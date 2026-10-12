@@ -109,11 +109,11 @@ powershell -ExecutionPolicy Bypass -File .\start-deck.ps1 -OpenFirewall
 No Docker? Serve the folder with anything static and open it over HTTP:
 
 ```powershell
-python -m http.server 8080 --directory .\site
+python -m http.server 8080
 ```
 
-The deck is one self-contained file — you can also just double-click
-`site\index.html`. It then only reaches OBS on that same PC (a `file://` page is not a
+The deck is one self-contained file at the repository root. You can also just
+double-click `index.html`. It then only reaches OBS on that same PC (a `file://` page is not a
 network page), which is fine for testing on the OBS machine itself.
 
 ---
@@ -169,10 +169,11 @@ Be aware of what you are turning on:
 
 | Path | Purpose |
 |---|---|
-| `site/index.html` | The whole deck — UI, styles and logic in one file |
-| `site/prototype.html` | The original `obs-deck` revision, preserved unmodified for reference; not served |
+| `index.html` | The whole deck — UI, styles and logic in one file, served at the repository root |
+| `prototype.html` | The original `obs-deck` revision, preserved unmodified for reference |
+| `.nojekyll` | Makes GitHub Pages publish files verbatim instead of Jekyll-processing them |
 | `Caddyfile` | Static host on port 8080, LAN-wide, no directory listing |
-| `docker-compose.yml` | Caddy container, `./site` mounted read-only |
+| `docker-compose.yml` | Caddy container, this repository mounted read-only |
 | `start-deck.ps1` / `stop-deck.ps1` | Windows launchers; detect Docker, LAN IP, OBS port |
 | `tools/verify.ps1` | Runs the whole verification suite |
 | `tools/test-deck.mjs` | Drives the deck's real script through a full OBS session |
@@ -189,8 +190,8 @@ MIT licensed — see [`LICENSE`](LICENSE).
 This deck is a rework of the single-file OBS Web Deck originally published in
 **[krezna06/obs-deck](https://github.com/krezna06/obs-deck)** (the revision served at
 `remote.krezna.web.id`). That original is preserved here byte-for-byte as
-[`site/prototype.html`](site/prototype.html) so the lineage is inspectable — it is
-**not** served, and `index.html` is the maintained version.
+[`prototype.html`](prototype.html) so the lineage is inspectable — it is
+**not** the maintained file.
 
 The hex-versus-base64 bug described above is present in that original, which is what
 this rework fixes.
@@ -236,7 +237,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\verify.ps1
 
 Two independent checks:
 
-1. **`tools/test-deck.mjs`** loads `site/index.html`, extracts the deck's real inline
+1. **`tools/test-deck.mjs`** loads `index.html`, extracts the deck's real inline
    `<script>`, runs it against a small DOM, and drives a complete session against a
    fake OBS server — handshake, base64 auth, scene list, scene switch, action buttons,
    error reporting and events. 47 assertions.
